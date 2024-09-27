@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+// Testing
+
 func TestPIDUpdate(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -135,5 +137,77 @@ func TestPIDSaturation(t *testing.T) {
 
 	if !pid.Saturated {
 		t.Errorf("Expected Saturated flag to be true, but it was false")
+	}
+}
+
+// Benchmarking
+
+func BenchmarkPIDUpdate(b *testing.B) {
+	pid := PID{
+		Kp: 1.0, Ki: 0.1, Kd: 0.05,
+		MinOutput: -100, MaxOutput: 100,
+	}
+	setpoint := 10.0
+	measured := 5.0
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pid.Update(setpoint, measured)
+	}
+}
+
+func BenchmarkPIDUpdateWithAntiWindup(b *testing.B) {
+	pid := PID{
+		Kp: 1.0, Ki: 0.1, Kd: 0.05,
+		MinOutput: -100, MaxOutput: 100,
+		AntiWindup: true,
+	}
+	setpoint := 10.0
+	measured := 5.0
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pid.Update(setpoint, measured)
+	}
+}
+
+func BenchmarkPIDUpdateWithAntiWindupNoKd(b *testing.B) {
+	pid := PID{
+		Kp: 1.0, Ki: 0.1, Kd: 0,
+		MinOutput: -100, MaxOutput: 100,
+		AntiWindup: true,
+	}
+	setpoint := 10.0
+	measured := 5.0
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pid.Update(setpoint, measured)
+	}
+}
+
+func BenchmarkPIDUpdateWithSaturation(b *testing.B) {
+	pid := PID{
+		Kp: 10.0, Ki: 0, Kd: 0,
+		MinOutput: -20, MaxOutput: 20,
+	}
+	setpoint := 100.0
+	measured := 0.0
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pid.Update(setpoint, measured)
+	}
+}
+
+func BenchmarkPIDReset(b *testing.B) {
+	pid := PID{
+		Kp: 1.0, Ki: 0.1, Kd: 0.05,
+		MinOutput: -100, MaxOutput: 100,
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		pid.Reset()
 	}
 }

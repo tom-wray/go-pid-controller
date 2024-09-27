@@ -50,15 +50,21 @@ func (pid *PID) Update(setpoint, measured float64) float64 {
 		return pid.lastOutput
 	}
 
-	// calculate P and D terms
+	// calculate P term
 	pTerm := pid.Kp * error
-	dTerm := pid.Kd * (error - pid.prevError) / dt
 
-	// integral term
-	integral := pid.integral + (0.5 * dt * (error + pid.prevError))
+	// Calculate D term (only if Kd is non-zero)
+	dTerm := 0.0
+	if pid.Kd != 0 {
+		dTerm = pid.Kd * (error - pid.prevError) / dt
+	}
 
-	// calculate I term
-	iTerm := pid.Ki * pid.integral
+	// Calculate I term (only if Ki is non-zero)
+	iTerm := 0.0
+	integral := 0.5 * dt * (error + pid.prevError)
+	if pid.Ki != 0 {
+		iTerm = pid.Ki * pid.integral
+	}
 
 	output := pTerm + iTerm + dTerm
 
@@ -66,14 +72,10 @@ func (pid *PID) Update(setpoint, measured float64) float64 {
 	saturated := false
 	if output > pid.MaxOutput {
 		output = pid.MaxOutput
-		if error > 0 {
-			saturated = true
-		}
+		saturated = error > 0
 	} else if output < pid.MinOutput {
 		output = pid.MinOutput
-		if error < 0 {
-			saturated = true
-		}
+		saturated = error < 0
 	}
 
 	// update previous error, time, and last output for use in next iteration
